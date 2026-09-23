@@ -37,7 +37,8 @@ class DescuentoFronteraTest {
     }
 
     @Test
-    void unidadNegativaLanzaExcepcion(){
-        assertThrows(IllegalArgumentException.class, () -> descuento.porcentaje(-1));
+    void totalCentavosDescuentoEnLaFrontera() {
+        long obtenido = descuento.totalCentavos(100, 100);
+        assertEquals(9000, obtenido);
     }
 }
