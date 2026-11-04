@@ -1,5 +1,7 @@
 name: Debug OIDC
-on: workflow_dispatch
+on:
+  push:
+    branches: [debug-oidc]
 permissions:
   id-token: write
   contents: read
