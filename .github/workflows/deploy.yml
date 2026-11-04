@@ -1,0 +1,51 @@
+name: Deploy a Lambda
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: descuento-volumen
+  FUNCTION: descuento-docker
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build y push
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+        run: |
+          IMAGE=$REGISTRY/$ECR_REPO:${GITHUB_SHA::7}
+          echo "IMAGE=$IMAGE" >> $GITHUB_ENV
+          docker buildx build --platform linux/amd64 --provenance=false \
+            --build-arg APP_VERSION=${GITHUB_SHA::7} --load -t $IMAGE .
+          docker push $IMAGE
+
+      - name: Actualizar la función
+        run: |
+          aws lambda update-function-code --function-name $FUNCTION --image-uri $IMAGE
+          aws lambda wait function-updated --function-name $FUNCTION
+
+      - name: Smoke test
+        run: |
+          aws lambda invoke --function-name $FUNCTION \
+            --payload '{"unidades":150,"precioCentavos":2500}' \
+            --cli-binary-format raw-in-base64-out respuesta.json
+          cat respuesta.json
+          jq -e '.porcentaje == 10' respuesta.json
