@@ -4,9 +4,9 @@ terraform {
   # Estado remoto compartido, con bloqueo nativo de S3.
   # Cambien <ACCOUNT_ID> y la región por las de su cuenta.
   backend "s3" {
-    bucket       = "tfstate-descuento-<ACCOUNT_ID>"
+    bucket       = "tfstate-descuento-226970430339"
     key          = "descuento/terraform.tfstate"
-    region       = "us-east-2"
+    region       = "us-east-1"
     use_lockfile = true
   }
 
@@ -28,7 +28,7 @@ provider "aws" {
 locals {
   # Un nombre por workspace: descuento-default, descuento-qa, ...
   nombre = "${var.prefijo}-${terraform.workspace}"
-  tags   = {
+  tags = {
     curso    = "devops-2026"
     ambiente = terraform.workspace
   }
@@ -40,7 +40,7 @@ resource "aws_iam_role" "lambda" {
   name = "${local.nombre}-role"
 
   assume_role_policy = jsonencode({
-    Version   = "2012-10-17"
+    Version = "2012-10-17"
     Statement = [{
       Effect    = "Allow"
       Principal = { Service = "lambda.amazonaws.com" }
